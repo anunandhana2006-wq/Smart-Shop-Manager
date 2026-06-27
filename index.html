@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Shop Expense Manager</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:100vh}
+  .app{max-width:480px;margin:0 auto;background:#fff;min-height:100vh;position:relative}
+  .topbar{background:linear-gradient(135deg,#1a6b3c,#2d9e5f);color:#fff;padding:16px 18px 20px;position:sticky;top:0;z-index:100}
+  .topbar-row{display:flex;align-items:center;justify-content:space-between}
+  .topbar h1{font-size:17px;font-weight:600;letter-spacing:.3px}
+  .topbar .date{font-size:12px;opacity:.85;margin-top:3px}
+  .topbar-icons{display:flex;gap:10px}
+  .topbar-icons button{background:rgba(255,255,255,.2);border:none;color:#fff;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+  .topbar-icons button:hover{background:rgba(255,255,255,.3)}
+  .summary-strip{display:grid;grid-template-columns:repeat(3,1fr);background:linear-gradient(135deg,#1a6b3c,#2d9e5f);padding:0 12px 16px}
+  .strip-card{background:rgba(255,255,255,.15);border-radius:10px;padding:10px 8px;text-align:center;margin:0 4px}
+  .strip-card .s-label{font-size:10px;color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .strip-card .s-val{font-size:17px;font-weight:700;color:#fff}
+  .page{display:none;padding-bottom:80px}
+  .page.active{display:block}
+  .home-body{padding:16px}
+  .section-title{font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.6px;margin:20px 0 10px}
+  .nav-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .nav-card{background:#fff;border:1.5px solid #e8e8e8;border-radius:14px;padding:16px 14px;cursor:pointer;transition:all .18s;display:flex;flex-direction:column;gap:8px;text-align:left}
+  .nav-card:hover{border-color:#2d9e5f;background:#f6fff9;transform:translateY(-1px)}
+  .nav-card:active{transform:scale(.97)}
+  .nav-card .nc-icon{font-size:26px}
+  .nav-card .nc-title{font-size:14px;font-weight:600;color:#1a1a1a}
+  .nav-card .nc-sub{font-size:12px;color:#888;margin-top:2px}
+  .nav-card.wide{grid-column:1/-1}
+  .nav-card.green{border-color:#c6ead5}.nav-card.green:hover{background:#f0fff5}
+  .nav-card.red{border-color:#f5c5c5}.nav-card.red:hover{background:#fff5f5}
+  .nav-card.amber{border-color:#f5e0b0}.nav-card.amber:hover{background:#fffbf0}
+  .nav-card.blue{border-color:#b0d0f5}.nav-card.blue:hover{background:#f0f7ff}
+  .nav-card.teal{border-color:#b0e5e0}.nav-card.teal:hover{background:#f0fffd}
+  .page-head{display:flex;align-items:center;gap:12px;padding:16px 16px 8px;border-bottom:1px solid #f0f0f0;position:sticky;top:0;background:#fff;z-index:10}
+  .back-btn{width:36px;height:36px;border:1.5px solid #e0e0e0;border-radius:10px;background:#fff;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .back-btn:hover{background:#f5f5f5}
+  .page-head h2{font-size:17px;font-weight:600}
+  .page-head .ph-icon{font-size:20px}
+  .form-area{padding:16px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;font-weight:600;color:#444;margin-bottom:6px}
+  .field input,.field select{width:100%;padding:12px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:15px;font-family:inherit;outline:none;background:#fafafa;color:#1a1a1a;transition:border-color .15s}
+  .field input:focus,.field select:focus{border-color:#2d9e5f;background:#fff;box-shadow:0 0 0 3px rgba(45,158,95,.1)}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .prefix-wrap{position:relative}
+  .prefix-wrap .prefix{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-weight:600;color:#555;font-size:15px;pointer-events:none}
+  .prefix-wrap input{padding-left:28px}
+  .action-btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:all .18s;margin-top:4px}
+  .action-btn:hover{opacity:.92}.action-btn:active{transform:scale(.98)}
+  .btn-green{background:linear-gradient(135deg,#1a6b3c,#2d9e5f);color:#fff}
+  .btn-red{background:linear-gradient(135deg,#b02020,#e03030);color:#fff}
+  .btn-amber{background:linear-gradient(135deg,#a06010,#d08020);color:#fff}
+  .btn-blue{background:linear-gradient(135deg,#1040a0,#2060d0);color:#fff}
+  .entries-wrap{padding:0 16px 16px}
+  .list-head{font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.6px;margin:20px 0 10px;display:flex;justify-content:space-between;align-items:center}
+  .list-head span{background:#e8f5ee;color:#1a6b3c;font-size:11px;padding:3px 10px;border-radius:20px}
+  .entry-card{background:#fff;border:1.5px solid #f0f0f0;border-radius:12px;padding:13px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .entry-card:hover{border-color:#e0e0e0;background:#fafafa}
+  .entry-left{flex:1;min-width:0}
+  .entry-name{font-size:14px;font-weight:600;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .entry-meta{font-size:12px;color:#999;margin-top:3px}
+  .entry-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+  .entry-amount{font-size:15px;font-weight:700}
+  .amt-green{color:#1a6b3c}.amt-red{color:#c02020}.amt-amber{color:#a06010}.amt-blue{color:#1050c0}
+  .del-btn{background:none;border:none;cursor:pointer;color:#ccc;font-size:17px;padding:2px;line-height:1}
+  .del-btn:hover{color:#e03030}
+  .empty-msg{text-align:center;padding:30px 16px;color:#bbb;font-size:14px}
+  .empty-msg .em-icon{font-size:36px;display:block;margin-bottom:8px}
+  .report-area{padding:16px}
+  .report-date{font-size:13px;color:#888;margin-bottom:16px}
+  .report-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+  .r-card{border-radius:12px;padding:14px}
+  .r-card .rc-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+  .r-card .rc-val{font-size:22px;font-weight:700}
+  .r-card.rc-income{background:#e8f5ee}.r-card.rc-income .rc-label{color:#1a6b3c}.r-card.rc-income .rc-val{color:#1a6b3c}
+  .r-card.rc-expense{background:#fdecea}.r-card.rc-expense .rc-label{color:#c02020}.r-card.rc-expense .rc-val{color:#c02020}
+  .r-card.rc-credit{background:#fff8e6}.r-card.rc-credit .rc-label{color:#a06010}.r-card.rc-credit .rc-val{color:#a06010}
+  .r-card.rc-cash{background:#e8f0fe}.r-card.rc-cash .rc-label{color:#1050c0}.r-card.rc-cash .rc-val{color:#1050c0}
+  .r-card.rc-net{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;background:#1a1a1a;color:#fff}
+  .r-card.rc-net .rc-label{color:rgba(255,255,255,.7);margin-bottom:4px}
+  .r-card.rc-net .rc-val{font-size:26px}
+  .status-pill{padding:7px 16px;border-radius:20px;font-size:13px;font-weight:700}
+  .pill-profit{background:#2d9e5f;color:#fff}
+  .pill-loss{background:#e03030;color:#fff}
+  .pill-break{background:#888;color:#fff}
+  .r-section{margin-top:20px}
+  .r-section h3{font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+  .r-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:14px}
+  .r-row:last-child{border:none}
+  .r-row .rr-name{color:#333;font-weight:500}
+  .r-row .rr-amt{font-weight:700}
+  .cred-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-left:6px}
+  .cred-pending{background:#fff3cd;color:#856404}
+  .cred-paid{background:#d1f0e0;color:#155724}
+  .mark-paid-btn{background:#e8f5ee;color:#1a6b3c;border:1px solid #b8ddc8;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;margin-top:8px;display:block}
+  .mark-paid-btn:hover{background:#d1f0e0}
+  .voice-area{padding:16px}
+  .voice-top{display:flex;gap:8px;align-items:stretch;margin-bottom:8px}
+  .voice-top input{flex:1;padding:13px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:15px;font-family:inherit;outline:none;background:#fafafa}
+  .voice-top input:focus{border-color:#2d9e5f;background:#fff}
+  .mic-btn{width:50px;height:50px;border-radius:50%;border:none;background:linear-gradient(135deg,#5030a0,#7050c0);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+  .mic-btn:hover{opacity:.9}
+  .mic-btn.listening{background:linear-gradient(135deg,#b02020,#e03030);animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+  .parse-btn{padding:13px 16px;background:#1a6b3c;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .parse-btn:hover{opacity:.9}
+  .mic-status{font-size:13px;color:#888;text-align:center;margin-bottom:10px;min-height:18px}
+  .mic-status.active{color:#e03030;font-weight:600}
+  .chips-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+  .chip{padding:6px 12px;border-radius:20px;font-size:12px;background:#f0f0f0;border:1px solid #e0e0e0;cursor:pointer;color:#555;transition:all .1s;font-weight:500}
+  .chip:hover{background:#e8f5ee;border-color:#2d9e5f;color:#1a6b3c}
+  .parse-result{background:#f8f8f8;border:1.5px solid #e8e8e8;border-radius:12px;padding:14px;margin-bottom:12px;display:none}
+  .pr-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #efefef;font-size:14px}
+  .pr-row:last-child{border:none}
+  .pr-key{color:#888;font-weight:500}
+  .pr-val{font-weight:600}
+  .pr-actions{display:flex;gap:8px;margin-top:12px}
+  .pr-actions button{flex:1;padding:11px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
+  .pr-save{background:#1a6b3c;color:#fff}
+  .pr-clear{background:#f0f0f0;color:#555}
+  .stock-card{background:#fff;border:1.5px solid #e8e8e8;border-radius:12px;padding:13px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+  .stock-name{font-size:14px;font-weight:600}
+  .stock-meta{font-size:12px;color:#888;margin-top:2px}
+  .stock-qty{font-size:15px;font-weight:700;color:#1a6b3c}
+  .stock-low-qty{color:#e03030}
+  .low-badge{background:#fdecea;color:#c02020;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px}
+  .cat-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .cat-tag{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid transparent;transition:all .1s}
+  .ct-income{background:#e8f5ee;color:#1a6b3c;border-color:#c6ead5}
+  .ct-expense{background:#fdecea;color:#c02020;border-color:#f5c5c5}
+  .ct-selected{box-shadow:0 2px 8px rgba(0,0,0,.15);transform:scale(1.05)}
+  .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1.5px solid #eee;display:flex;z-index:200}
+  .bn-btn{flex:1;padding:10px 6px 12px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:#aaa;font-size:10px;font-weight:600;transition:color .15s}
+  .bn-btn .bn-icon{font-size:22px}
+  .bn-btn.active{color:#1a6b3c}
+  .bn-btn:hover{color:#2d9e5f}
+  .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a1a;color:#fff;padding:12px 22px;border-radius:30px;font-size:14px;font-weight:500;opacity:0;transition:all .3s;z-index:999;white-space:nowrap;pointer-events:none}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="topbar-row">
+      <div>
+        <h1>🏪 Smart Shop Manager</h1>
+        <div class="date" id="top-date"></div>
+      </div>
+      <div class="topbar-icons">
+        <button onclick="go('report')" title="Report">📊</button>
+        <button onclick="clearAllData()" title="New day">🔄</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-strip">
+    <div class="strip-card"><div class="s-label">Income</div><div class="s-val" id="s-income">₹0</div></div>
+    <div class="strip-card"><div class="s-label">Expense</div><div class="s-val" id="s-expense">₹0</div></div>
+    <div class="strip-card"><div class="s-label">Net</div><div class="s-val" id="s-net">₹0</div></div>
+  </div>
+
+  <!-- HOME -->
+  <div id="page-home" class="page active">
+    <div class="home-body">
+      <div class="section-title">Daily tracking</div>
+      <div class="nav-grid">
+        <div class="nav-card green" onclick="go('income')"><span class="nc-icon">💰</span><div class="nc-title">Add income</div><div class="nc-sub">Sales &amp; earnings</div></div>
+        <div class="nav-card red" onclick="go('expense')"><span class="nc-icon">🧾</span><div class="nc-title">Add expense</div><div class="nc-sub">Purchases &amp; costs</div></div>
+        <div class="nav-card amber" onclick="go('credit')"><span class="nc-icon">📒</span><div class="nc-title">Customer credit</div><div class="nc-sub">Pending payments</div></div>
+        <div class="nav-card blue" onclick="go('stock')"><span class="nc-icon">📦</span><div class="nc-title">Stock tracker</div><div class="nc-sub">Inventory levels</div></div>
+        <div class="nav-card teal wide" onclick="go('voice')"><span class="nc-icon">🎤</span><div class="nc-title">Voice / quick entry</div><div class="nc-sub">Speak or type: "Milk expense 700" · "Tea sales 1200"</div></div>
+      </div>
+      <div class="section-title">Today's recent entries</div>
+      <div id="home-recent"></div>
+    </div>
+  </div>
+
+  <!-- INCOME -->
+  <div id="page-income" class="page">
+    <div class="page-head"><button class="back-btn" onclick="go('home')">←</button><span class="ph-icon">💰</span><h2>Add income</h2></div>
+    <div class="form-area">
+      <div class="field"><label>Category (tap to select)</label><div class="cat-tags" id="inc-cats"></div></div>
+      <div class="field"><label for="inc-source">Income source</label><input id="inc-source" type="text" placeholder="Tea Sales, Coffee, Breakfast, Snacks…"></div>
+      <div class="field"><label for="inc-amount">Amount (₹)</label><div class="prefix-wrap"><span class="prefix">₹</span><input id="inc-amount" type="number" placeholder="0" min="0" inputmode="numeric"></div></div>
+      <div class="field-row">
+        <div class="field"><label for="inc-qty">Qty / units sold</label><input id="inc-qty" type="number" placeholder="e.g. 50 cups" min="0"></div>
+        <div class="field"><label for="inc-payment">Payment mode</label><select id="inc-payment"><option>Cash</option><option>UPI / GPay</option><option>PhonePe</option><option>Paytm</option><option>Card</option><option>Credit</option></select></div>
+      </div>
+      <div class="field"><label for="inc-note">Note (optional)</label><input id="inc-note" type="text" placeholder="Bulk order, festival sale…"></div>
+      <button class="action-btn btn-green" onclick="saveIncome()">💾 Save income</button>
+    </div>
+    <div class="entries-wrap">
+      <div class="list-head">Today's income <span id="inc-total-badge">₹0</span></div>
+      <div id="income-list"></div>
+    </div>
+  </div>
+
+  <!-- EXPENSE -->
+  <div id="page-expense" class="page">
+    <div class="page-head"><button class="back-btn" onclick="go('home')">←</button><span class="ph-icon">🧾</span><h2>Add expense</h2></div>
+    <div class="form-area">
+      <div class="field"><label>Category (tap to select)</label><div class="cat-tags" id="exp-cats"></div></div>
+      <div class="field"><label for="exp-name">Expense name</label><input id="exp-name" type="text" placeholder="Milk, Sugar, Gas Cylinder, Electricity Bill…"></div>
+      <div class="field"><label for="exp-amount">Amount (₹)</label><div class="prefix-wrap"><span class="prefix">₹</span><input id="exp-amount" type="number" placeholder="0" min="0" inputmode="numeric"></div></div>
+      <div class="field-row">
+        <div class="field"><label for="exp-vendor">Vendor / supplier</label><input id="exp-vendor" type="text" placeholder="Shop name"></div>
+        <div class="field"><label for="exp-payment">Payment mode</label><select id="exp-payment"><option>Cash</option><option>UPI / GPay</option><option>PhonePe</option><option>Paytm</option><option>Card</option><option>Credit</option></select></div>
+      </div>
+      <div class="field"><label for="exp-note">Note (optional)</label><input id="exp-note" type="text" placeholder="Receipt no, reason…"></div>
+      <button class="action-btn btn-red" onclick="saveExpense()">💾 Save expense</button>
+    </div>
+    <div class="entries-wrap">
+      <div class="list-head">Today's expenses <span id="exp-total-badge" style="background:#fdecea;color:#c02020">₹0</span></div>
+      <div id="expense-list"></div>
+    </div>
+  </div>
+
+  <!-- CREDIT -->
+  <div id="page-credit" class="page">
+    <div class="page-head"><button class="back-btn" onclick="go('home')">←</button><span class="ph-icon">📒</span><h2>Customer credit</h2></div>
+    <div class="form-area">
+      <div class="field"><label for="cred-name">Customer name</label><input id="cred-name" type="text" placeholder="Ramesh, Priya, Kumar…"></div>
+      <div class="field"><label for="cred-phone">Phone number (optional)</label><input id="cred-phone" type="tel" placeholder="Mobile number for reminder"></div>
+      <div class="field-row">
+        <div class="field"><label for="cred-amount">Amount (₹)</label><div class="prefix-wrap"><span class="prefix">₹</span><input id="cred-amount" type="number" placeholder="0" min="0" inputmode="numeric"></div></div>
+        <div class="field"><label for="cred-due">Due date</label><input id="cred-due" type="date"></div>
+      </div>
+      <div class="field"><label for="cred-item">Items taken</label><input id="cred-item" type="text" placeholder="Tea x3, Biscuits, Lunch…"></div>
+      <div class="field"><label for="cred-note">Note</label><input id="cred-note" type="text" placeholder="Regular customer, special case…"></div>
+      <button class="action-btn btn-amber" onclick="saveCredit()">💾 Save credit</button>
+    </div>
+    <div class="entries-wrap">
+      <div class="list-head">All credits <span id="cred-total-badge" style="background:#fff3cd;color:#856404">₹0 pending</span></div>
+      <div id="credit-list"></div>
+    </div>
+  </div>
+
+  <!-- STOCK -->
+  <div id="page-stock" class="page">
+    <div class="page-head"><button class="back-btn" onclick="go('home')">←</button><span class="ph-icon">📦</span><h2>Stock tracker</h2></div>
+    <div class="form-area">
+      <div class="field"><label for="stk-name">Item name</label><input id="stk-name" type="text" placeholder="Milk, Sugar, Tea Powder, Gas Cylinder…"></div>
+      <div class="field-row">
+        <div class="field"><label for="stk-qty">Current quantity</label><input id="stk-qty" type="number" placeholder="e.g. 5" min="0"></div>
+        <div class="field"><label for="stk-unit">Unit</label><select id="stk-unit"><option>kg</option><option>litre</option><option>pkt</option><option>box</option><option>nos</option><option>dozen</option><option>cylinder</option></select></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label for="stk-low">Low stock alert at</label><input id="stk-low" type="number" placeholder="e.g. 1" min="0"></div>
+        <div class="field"><label for="stk-cost">Cost per unit (₹)</label><div class="prefix-wrap"><span class="prefix">₹</span><input id="stk-cost" type="number" placeholder="0" min="0"></div></div>
+      </div>
+      <button class="action-btn btn-blue" onclick="saveStock()">💾 Add to stock</button>
+    </div>
+    <div class="entries-wrap">
+      <div class="list-head">Inventory</div>
+      <div id="stock-list"></div>
+    </div>
+  </div>
+
+  <!-- VOICE -->
+  <div id="page-voice" class="page">
+    <div class="page-head"><button class="back-btn" onclick="go('home')">←</button><span class="ph-icon">🎤</span><h2>Voice / quick entry</h2></div>
+    <div class="voice-area">
+      <div class="voice-top">
+        <input id="voice-input" type="text" placeholder='Speak or type: "Milk expense 700"' onkeydown="if(event.key==='Enter')parseVoiceText()">
+        <button class="mic-btn" id="mic-btn" onclick="toggleMic()" title="Tap to speak">🎤</button>
+      </div>
+      <div style="text-align:right;margin-bottom:8px">
+        <button class="parse-btn" onclick="parseVoiceText()">Parse →</button>
+      </div>
+      <div class="mic-status" id="mic-status">Tap 🎤 to speak, or type and press Parse</div>
+      <div class="chips-row" id="voice-chips"></div>
+      <div class="parse-result" id="parse-result">
+        <div id="parse-rows"></div>
+        <div class="pr-actions">
+          <button class="pr-save" onclick="confirmVoice()">✅ Save entry</button>
+          <button class="pr-clear" onclick="clearVoice()">✕ Clear</button>
+        </div>
+      </div>
+      <div style="background:#f8f8f8;border-radius:12px;padding:14px;font-size:13px;color:#666;line-height:2">
+        <strong style="color:#444;display:block;margin-bottom:4px">📝 Examples:</strong>
+        "Milk expense 700" &nbsp;→&nbsp; ₹700 expense<br>
+        "Tea sales income 1200" &nbsp;→&nbsp; ₹1200 income<br>
+        "Coffee 600" &nbsp;→&nbsp; income<br>
+        "Electricity bill 800" &nbsp;→&nbsp; expense<br>
+        "Morning sales 2000" &nbsp;→&nbsp; income
+      </div>
+      <div class="entries-wrap" style="padding:0;margin-top:20px">
+        <div class="list-head">Added via voice / quick entry</div>
+        <div id="voice-log"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORT -->
+  <div id="page-report" class="page">
+    <div class="page-head"><button class="back-btn" onclick="go('home')">←</button><span class="ph-icon">📊</span><h2>Daily report</h2></div>
+    <div class="report-area">
+      <div class="report-date" id="report-date"></div>
+      <div class="report-cards">
+        <div class="r-card rc-income"><div class="rc-label">Total income</div><div class="rc-val" id="r-income">₹0</div></div>
+        <div class="r-card rc-expense"><div class="rc-label">Total expense</div><div class="rc-val" id="r-expense">₹0</div></div>
+        <div class="r-card rc-credit"><div class="rc-label">Pending credit</div><div class="rc-val" id="r-credit">₹0</div></div>
+        <div class="r-card rc-cash"><div class="rc-label">Cash in hand</div><div class="rc-val" id="r-cash">₹0</div></div>
+        <div class="r-card rc-net"><div><div class="rc-label">Net profit / loss</div><div class="rc-val" id="r-net">₹0</div></div><span class="status-pill" id="r-status">—</span></div>
+      </div>
+      <div class="r-section"><h3>💰 Income breakdown</h3><div id="rep-income"></div></div>
+      <div class="r-section"><h3>🧾 Expense breakdown</h3><div id="rep-expense"></div></div>
+      <div class="r-section"><h3>📒 Customer credits</h3><div id="rep-credit"></div></div>
+      <div class="r-section"><h3>📦 Low stock alerts</h3><div id="rep-stock"></div></div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="bn-btn active" id="bn-home" onclick="go('home')"><span class="bn-icon">🏠</span>Home</button>
+    <button class="bn-btn" id="bn-income" onclick="go('income')"><span class="bn-icon">💰</span>Income</button>
+    <button class="bn-btn" id="bn-expense" onclick="go('expense')"><span class="bn-icon">🧾</span>Expense</button>
+    <button class="bn-btn" id="bn-credit" onclick="go('credit')"><span class="bn-icon">📒</span>Credit</button>
+    <button class="bn-btn" id="bn-report" onclick="go('report')"><span class="bn-icon">📊</span>Report</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var DB={load:function(k){try{return JSON.parse(localStorage.getItem(k)||'[]')}catch(e){return[]}},save:function(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+var income=DB.load('ssm_income');
+var expenses=DB.load('ssm_expenses');
+var credits=DB.load('ssm_credits');
+var stocks=DB.load('ssm_stocks');
+var voiceLog=DB.load('ssm_voicelog');
+function persist(){DB.save('ssm_income',income);DB.save('ssm_expenses',expenses);DB.save('ssm_credits',credits);DB.save('ssm_stocks',stocks);DB.save('ssm_voicelog',voiceLog);}
+var INC_CATS=['Tea','Coffee','Breakfast','Lunch','Dinner','Snacks','Beverages','Biscuits','Cold drinks','Cigarettes','Parcel','Bulk order','Other'];
+var EXP_CATS=['Milk','Sugar','Tea powder','Coffee powder','Gas cylinder','Electricity','Rent','Salary','Packaging','Transport','Water can','Cleaning','Maintenance','Other'];
+function buildCats(cid,cats,type){var el=document.getElementById(cid);el.innerHTML=cats.map(function(c){return'<span class="cat-tag ct-'+type+'" onclick="selectCat(this,\''+c+'\',\''+type+'\')">'+ c+'</span>'}).join('');}
+var selCatIncome='',selCatExpense='';
+function selectCat(el,name,type){el.parentNode.querySelectorAll('.cat-tag').forEach(function(t){t.classList.remove('ct-selected')});el.classList.add('ct-selected');if(type==='income'){selCatIncome=name;var s=document.getElementById('inc-source');if(!s.value)s.value=name;}else{selCatExpense=name;var e=document.getElementById('exp-name');if(!e.value)e.value=name;}}
+function go(page){document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});document.getElementById('page-'+page).classList.add('active');document.querySelectorAll('.bn-btn').forEach(function(b){b.classList.remove('active')});var bn=document.getElementById('bn-'+page);if(bn)bn.classList.add('active');if(page==='report')renderReport();if(page==='income'){renderList('income');buildCats('inc-cats',INC_CATS,'income');}if(page==='expense'){renderList('expense');buildCats('exp-cats',EXP_CATS,'expense');}if(page==='credit')renderList('credit');if(page==='stock')renderList('stock');if(page==='voice')initVoicePage();if(page==='home')renderHomeRecent();updateSummary();}
+function fmt(n){return'₹'+Math.round(n).toLocaleString('en-IN')}
+function nowTime(){return new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}
+function todayStr(){return new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
+function uid(){return Date.now()+Math.random().toString(36).slice(2,6)}
+function updateSummary(){var inc=income.reduce(function(a,b){return a+b.amount},0);var exp=expenses.reduce(function(a,b){return a+b.amount},0);var net=inc-exp;document.getElementById('s-income').textContent=fmt(inc);document.getElementById('s-expense').textContent=fmt(exp);document.getElementById('s-net').textContent=fmt(net);}
+function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._tm);t._tm=setTimeout(function(){t.classList.remove('show')},2400);}
+function saveIncome(){var src=document.getElementById('inc-source').value.trim();var amt=parseFloat(document.getElementById('inc-amount').value);if(!src){showToast('⚠️ Enter income source');return;}if(!amt||amt<=0){showToast('⚠️ Enter a valid amount');return;}income.push({id:uid(),source:src,amount:amt,category:selCatIncome||'Other',qty:document.getElementById('inc-qty').value,payment:document.getElementById('inc-payment').value,note:document.getElementById('inc-note').value.trim(),time:nowTime()});persist();document.getElementById('inc-source').value='';document.getElementById('inc-amount').value='';document.getElementById('inc-qty').value='';document.getElementById('inc-note').value='';selCatIncome='';document.querySelectorAll('#inc-cats .cat-tag').forEach(function(t){t.classList.remove('ct-selected')});renderList('income');updateSummary();showToast('✅ Income saved!');}
+function saveExpense(){var name=document.getElementById('exp-name').value.trim();var amt=parseFloat(document.getElementById('exp-amount').value);if(!name){showToast('⚠️ Enter expense name');return;}if(!amt||amt<=0){showToast('⚠️ Enter a valid amount');return;}expenses.push({id:uid(),name:name,amount:amt,category:selCatExpense||'Other',vendor:document.getElementById('exp-vendor').value.trim(),payment:document.getElementById('exp-payment').value,note:document.getElementById('exp-note').value.trim(),time:nowTime()});persist();document.getElementById('exp-name').value='';document.getElementById('exp-amount').value='';document.getElementById('exp-vendor').value='';document.getElementById('exp-note').value='';selCatExpense='';document.querySelectorAll('#exp-cats .cat-tag').forEach(function(t){t.classList.remove('ct-selected')});renderList('expense');updateSummary();showToast('✅ Expense saved!');}
+function saveCredit(){var name=document.getElementById('cred-name').value.trim();var amt=parseFloat(document.getElementById('cred-amount').value);if(!name){showToast('⚠️ Enter customer name');return;}if(!amt||amt<=0){showToast('⚠️ Enter a valid amount');return;}credits.push({id:uid(),customer:name,amount:amt,phone:document.getElementById('cred-phone').value.trim(),due:document.getElementById('cred-due').value,item:document.getElementById('cred-item').value.trim(),note:document.getElementById('cred-note').value.trim(),paid:false,time:nowTime()});persist();document.getElementById('cred-name').value='';document.getElementById('cred-phone').value='';document.getElementById('cred-amount').value='';document.getElementById('cred-due').value='';document.getElementById('cred-item').value='';document.getElementById('cred-note').value='';renderList('credit');updateSummary();showToast('✅ Credit recorded!');}
+function saveStock(){var name=document.getElementById('stk-name').value.trim();var qty=parseFloat(document.getElementById('stk-qty').value);if(!name){showToast('⚠️ Enter item name');return;}if(isNaN(qty)||qty<0){showToast('⚠️ Enter valid quantity');return;}var ex=stocks.findIndex(function(s){return s.name.toLowerCase()===name.toLowerCase()});if(ex>=0){stocks[ex].qty=qty;stocks[ex].unit=document.getElementById('stk-unit').value;stocks[ex].low=parseFloat(document.getElementById('stk-low').value)||1;stocks[ex].cost=parseFloat(document.getElementById('stk-cost').value)||0;showToast('✅ Stock updated!');}else{stocks.push({id:uid(),name:name,qty:qty,unit:document.getElementById('stk-unit').value,low:parseFloat(document.getElementById('stk-low').value)||1,cost:parseFloat(document.getElementById('stk-cost').value)||0});showToast('✅ Added to stock!');}persist();document.getElementById('stk-name').value='';document.getElementById('stk-qty').value='';document.getElementById('stk-low').value='';document.getElementById('stk-cost').value='';renderList('stock');}
+function markPaid(id){var c=credits.find(function(e){return e.id===id});if(c){c.paid=true;persist();renderList('credit');updateSummary();showToast('✅ '+c.customer+' paid!');}}
+function del(type,id){if(type==='income')income=income.filter(function(e){return e.id!==id});if(type==='expense')expenses=expenses.filter(function(e){return e.id!==id});if(type==='credit')credits=credits.filter(function(e){return e.id!==id});if(type==='stock')stocks=stocks.filter(function(e){return e.id!==id});persist();renderList(type);updateSummary();showToast('🗑️ Removed');}
+function renderList(type){
+  if(type==='income'){var el=document.getElementById('income-list');var tot=income.reduce(function(a,b){return a+b.amount},0);document.getElementById('inc-total-badge').textContent=fmt(tot);if(!income.length){el.innerHTML='<div class="empty-msg"><span class="em-icon">💸</span>No income entries yet</div>';return;}el.innerHTML=income.slice().reverse().map(function(e){return'<div class="entry-card"><div class="entry-left"><div class="entry-name">'+e.source+'</div><div class="entry-meta">'+e.category+' · '+e.payment+' · '+e.time+(e.note?' · '+e.note:'')+'</div></div><div class="entry-right"><span class="entry-amount amt-green">+'+fmt(e.amount)+'</span><button class="del-btn" onclick="del(\'income\',\''+e.id+'\')">✕</button></div></div>'}).join('');}
+  if(type==='expense'){var el2=document.getElementById('expense-list');var tot2=expenses.reduce(function(a,b){return a+b.amount},0);document.getElementById('exp-total-badge').textContent=fmt(tot2);if(!expenses.length){el2.innerHTML='<div class="empty-msg"><span class="em-icon">🧾</span>No expenses yet</div>';return;}el2.innerHTML=expenses.slice().reverse().map(function(e){return'<div class="entry-card"><div class="entry-left"><div class="entry-name">'+e.name+'</div><div class="entry-meta">'+e.category+' · '+e.payment+(e.vendor?' · '+e.vendor:'')+(e.note?' · '+e.note:'')+'</div></div><div class="entry-right"><span class="entry-amount amt-red">-'+fmt(e.amount)+'</span><button class="del-btn" onclick="del(\'expense\',\''+e.id+'\')">✕</button></div></div>'}).join('');}
+  if(type==='credit'){var el3=document.getElementById('credit-list');var pend=credits.filter(function(c){return!c.paid}).reduce(function(a,b){return a+b.amount},0);document.getElementById('cred-total-badge').textContent=fmt(pend)+' pending';if(!credits.length){el3.innerHTML='<div class="empty-msg"><span class="em-icon">📒</span>No credits recorded</div>';return;}el3.innerHTML=credits.slice().reverse().map(function(e){return'<div class="entry-card" style="flex-direction:column;align-items:stretch;gap:8px"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div class="entry-left"><div class="entry-name">'+e.customer+'<span class="cred-badge '+(e.paid?'cred-paid':'cred-pending')+'">'+(e.paid?'Paid':'Pending')+'</span></div><div class="entry-meta">'+(e.item||'')+(e.phone?' · 📞 '+e.phone:'')+(e.due?' · Due: '+e.due:'')+'</div></div><div class="entry-right"><span class="entry-amount amt-amber">'+fmt(e.amount)+'</span><button class="del-btn" onclick="del(\'credit\',\''+e.id+'\')">✕</button></div></div>'+(e.paid?'':'<button class="mark-paid-btn" onclick="markPaid(\''+e.id+'\')">✅ Mark as paid</button>')+'</div>'}).join('');}
+  if(type==='stock'){var el4=document.getElementById('stock-list');if(!stocks.length){el4.innerHTML='<div class="empty-msg"><span class="em-icon">📦</span>No stock items yet</div>';return;}el4.innerHTML=stocks.map(function(s){var low=s.qty<=s.low;return'<div class="stock-card"><div><div class="stock-name">'+s.name+(low?'<span class="low-badge">LOW</span>':'')+'</div><div class="stock-meta">'+(s.cost?'₹'+s.cost+'/'+s.unit:'')+(s.low?' · Alert at '+s.low+' '+s.unit:'')+'</div></div><div style="text-align:right"><div class="stock-qty '+(low?'stock-low-qty':'')+'">'+s.qty+' '+s.unit+'</div><button class="del-btn" onclick="del(\'stock\',\''+s.id+'\')" style="margin-top:4px">✕</button></div></div>'}).join('');}
+}
+function renderHomeRecent(){var el=document.getElementById('home-recent');var all=[];income.forEach(function(e){all.push({type:'income',name:e.source,amount:e.amount,time:e.time})});expenses.forEach(function(e){all.push({type:'expense',name:e.name,amount:e.amount,time:e.time})});if(!all.length){el.innerHTML='<div class="empty-msg" style="padding:20px 0"><span class="em-icon">📋</span>No entries yet. Start adding!</div>';return;}el.innerHTML=all.slice(-5).reverse().map(function(e){return'<div class="entry-card"><div class="entry-left"><div class="entry-name">'+e.name+'</div><div class="entry-meta">'+e.time+'</div></div><span class="entry-amount '+(e.type==='income'?'amt-green':'amt-red')+'">'+(e.type==='income'?'+':'-')+fmt(e.amount)+'</span></div>'}).join('');}
+function renderReport(){document.getElementById('report-date').textContent=todayStr();var inc=income.reduce(function(a,b){return a+b.amount},0);var exp=expenses.reduce(function(a,b){return a+b.amount},0);var pend=credits.filter(function(c){return!c.paid}).reduce(function(a,b){return a+b.amount},0);var net=inc-exp;document.getElementById('r-income').textContent=fmt(inc);document.getElementById('r-expense').textContent=fmt(exp);document.getElementById('r-credit').textContent=fmt(pend);document.getElementById('r-cash').textContent=fmt(inc-exp);var ne=document.getElementById('r-net');ne.textContent=(net<0?'-':'')+fmt(Math.abs(net));ne.style.color=net>=0?'#4ade80':'#f87171';var sb=document.getElementById('r-status');if(net>0){sb.textContent='🟢 Profit';sb.className='status-pill pill-profit';}else if(net<0){sb.textContent='🔴 Loss';sb.className='status-pill pill-loss';}else{sb.textContent='⚖️ Break even';sb.className='status-pill pill-break';}document.getElementById('rep-income').innerHTML=income.length?income.map(function(e){return'<div class="r-row"><span class="rr-name">'+e.source+' <small style="color:#999">'+e.payment+'</small></span><span class="rr-amt amt-green">+'+fmt(e.amount)+'</span></div>'}).join(''):'<div style="color:#bbb;font-size:13px;padding:8px 0">No income</div>';document.getElementById('rep-expense').innerHTML=expenses.length?expenses.map(function(e){return'<div class="r-row"><span class="rr-name">'+e.name+' <small style="color:#999">'+e.category+'</small></span><span class="rr-amt amt-red">-'+fmt(e.amount)+'</span></div>'}).join(''):'<div style="color:#bbb;font-size:13px;padding:8px 0">No expenses</div>';document.getElementById('rep-credit').innerHTML=credits.length?credits.map(function(e){return'<div class="r-row"><span class="rr-name">'+e.customer+' <span class="cred-badge '+(e.paid?'cred-paid':'cred-pending')+'">'+(e.paid?'Paid':'Pending')+'</span></span><span class="rr-amt amt-amber">'+fmt(e.amount)+'</span></div>'}).join(''):'<div style="color:#bbb;font-size:13px;padding:8px 0">No credits</div>';var low=stocks.filter(function(s){return s.qty<=s.low});document.getElementById('rep-stock').innerHTML=low.length?low.map(function(s){return'<div class="r-row"><span class="rr-name">'+s.name+' <span class="low-badge">LOW</span></span><span class="rr-amt" style="color:#e03030">'+s.qty+' '+s.unit+'</span></div>'}).join(''):'<div style="color:#bbb;font-size:13px;padding:8px 0">All stock OK ✓</div>';}
+var recog=null,isListening=false,voiceParsed=null;
+function initVoicePage(){var chips=['Milk expense 700','Tea sales 1200','Coffee 600','Sugar 250 expense','Electricity 800','Morning sales 2000','Gas cylinder 900','Biscuits income 300','Rent expense 5000','Water can 50'];document.getElementById('voice-chips').innerHTML=chips.map(function(c){return'<span class="chip" onclick="useChip(\''+c+'\')">'+c+'</span>'}).join('');renderVoiceLog();}
+function useChip(text){document.getElementById('voice-input').value=text;parseVoiceText();}
+function toggleMic(){var SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){showToast('⚠️ Use Google Chrome for voice!');return;}if(isListening){stopMic();return;}recog=new SR();recog.lang='en-IN';recog.continuous=false;recog.interimResults=false;recog.onstart=function(){isListening=true;document.getElementById('mic-btn').classList.add('listening');document.getElementById('mic-btn').textContent='⏹';document.getElementById('mic-status').textContent='🔴 Listening… speak now';document.getElementById('mic-status').className='mic-status active';};recog.onresult=function(e){var text=e.results[0][0].transcript;document.getElementById('voice-input').value=text;parseVoiceText();stopMic();};recog.onerror=function(e){stopMic();if(e.error==='not-allowed')showToast('⚠️ Allow microphone in browser settings');else showToast('⚠️ Could not hear. Try again.');};recog.onend=function(){stopMic();};recog.start();}
+function stopMic(){isListening=false;if(recog)try{recog.stop();}catch(e){}document.getElementById('mic-btn').classList.remove('listening');document.getElementById('mic-btn').textContent='🎤';document.getElementById('mic-status').textContent='Tap 🎤 to speak, or type and press Parse';document.getElementById('mic-status').className='mic-status';}
+function parseVoiceText(){var text=document.getElementById('voice-input').value.trim();if(!text){showToast('Type or speak something first');return;}var t=text.toLowerCase();var numMatch=t.match(/\d+(\.\d+)?/);var amount=numMatch?parseFloat(numMatch[0]):0;var isIncome=/(income|sale|sales|earn|earned|receive|received|morning|evening|total|daily|profit)/i.test(t);var isExpense=/(expense|expenses|bought|buy|purchase|cost|spent|spend|bill|paid|pay|cylinder|electricity|rent|salary|water|gas|cleaning)/i.test(t);var type=isIncome?'income':'expense';var name=text.replace(/\d+(\.\d+)?/g,'').replace(/income|sales?|earn(ed)?|receive(d)?|expense(s)?|bought|buy|purchase(d)?|cost|spent?|spend|bill|paid?|pay/gi,'').replace(/\s+/g,' ').trim();if(!name||name.length<2)name=type==='income'?'Sales':'Purchase';name=name.charAt(0).toUpperCase()+name.slice(1);voiceParsed={type:type,name:name,amount:amount,raw:text};var col=type==='income'?'#1a6b3c':'#c02020';document.getElementById('parse-rows').innerHTML='<div class="pr-row"><span class="pr-key">Type</span><span class="pr-val" style="color:'+col+'">'+type.charAt(0).toUpperCase()+type.slice(1)+'</span></div><div class="pr-row"><span class="pr-key">Name</span><span class="pr-val">'+name+'</span></div><div class="pr-row"><span class="pr-key">Amount</span><span class="pr-val">'+fmt(amount)+'</span></div>';document.getElementById('parse-result').style.display='block';}
+function confirmVoice(){if(!voiceParsed){showToast('Nothing to save');return;}var t=nowTime();var entry={id:uid(),amount:voiceParsed.amount,note:'Voice entry',time:t};if(voiceParsed.type==='income'){entry.source=voiceParsed.name;entry.category='Other';entry.payment='Cash';entry.qty='';income.push(entry);}else{entry.name=voiceParsed.name;entry.category='Other';entry.payment='Cash';entry.vendor='';expenses.push(entry);}voiceLog.unshift({type:voiceParsed.type,name:voiceParsed.name,amount:voiceParsed.amount,raw:voiceParsed.raw,time:t});if(voiceLog.length>30)voiceLog.length=30;persist();clearVoice();renderVoiceLog();updateSummary();showToast('✅ Saved!');}
+function clearVoice(){voiceParsed=null;document.getElementById('voice-input').value='';document.getElementById('parse-result').style.display='none';}
+function renderVoiceLog(){var el=document.getElementById('voice-log');if(!voiceLog.length){el.innerHTML='<div class="empty-msg">Entries added here will appear below</div>';return;}el.innerHTML=voiceLog.map(function(e){return'<div class="entry-card"><div class="entry-left"><div class="entry-name">'+e.name+'</div><div class="entry-meta">"'+e.raw+'" · '+e.time+'</div></div><span class="entry-amount '+(e.type==='income'?'amt-green':'amt-red')+'">'+(e.type==='income'?'+':'-')+fmt(e.amount)+'</span></div>'}).join('');}
+function clearAllData(){if(!confirm('Reset all data for a new day?\n\nThis clears all income, expenses and credits.'))return;income=[];expenses=[];credits=[];voiceLog=[];persist();go('home');showToast('🔄 New day started!');}
+document.getElementById('top-date').textContent=todayStr();
+updateSummary();
+renderHomeRecent();
+</script>
+</body>
+</html>
